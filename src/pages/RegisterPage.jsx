@@ -1,6 +1,6 @@
 import React, { useState } from "react"; // useState는 입력된 값을 실시간으로 저장 (이름, 이메일, 비밀번호)
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api.js";
 
 function RegisterPage() {
     const [username, setUsername] = useState(""); // useState("")는 리액트가 내부에 저장하고있는 스토리지의 [0]에 ""라는 값을 저장한 후 username에 할당하고
@@ -15,7 +15,7 @@ function RegisterPage() {
                             // ex <form> submit = 페이지 새로고침
         try {
             // 백엔드로 회원가입 요청 (POST)
-            const response = await axios.post("http://localhost:3000/api/auth/register", {
+            const response = await api.post("/auth/register", {
                 username,
                 email,
                 password,
