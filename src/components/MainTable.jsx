@@ -1,68 +1,90 @@
-// src/components/MainTable.jsx
+import { useState, useMemo } from "react";
+
 function MainTable({ coins, prices, onSelect }) {
-  // 현재가 내림차순 정렬
-  const rows = coins
-    .map((c) => ({ coin: c, p: prices[c.market] }))
-    .filter((r) => r.p?.trade_price)
-    .sort((a, b) => b.p.trade_price - a.p.trade_price);
+  const [sortConfig, setSortConfig] = useState({ key: "change", direction: "desc" });
+
+  // 정렬 기준 변경 함수
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        // 같은 컬럼 클릭 시 방향 반전
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      // 다른 컬럼 클릭 시 새 기준 설정
+      return { key, direction: "desc" };
+    });
+  };
+
+  // 정렬된 데이터 생성
+  const sortedCoins = useMemo(() => {
+    return [...coins].sort((a, b) => {
+      const aPrice = prices[a.market]?.price ?? 0;
+      const bPrice = prices[b.market]?.price ?? 0;
+      const aChange = prices[a.market]?.change ?? 0;
+      const bChange = prices[b.market]?.change ?? 0;
+
+      let valA = 0,
+        valB = 0;
+      if (sortConfig.key === "price") {
+        valA = aPrice;
+        valB = bPrice;
+      } else if (sortConfig.key === "change") {
+        valA = aChange;
+        valB = bChange;
+      }
+
+      return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+    });
+  }, [coins, prices, sortConfig]);
 
   return (
-    <div className="bg-gray-800 p-4 rounded-xl shadow">
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold">실시간 시세</h2>
-        <span className="text-xs text-gray-400">
-          가격 내림차순 • {rows.length} 종목
-        </span>
-      </div>
-
-      <div className="overflow-auto max-h-[520px]">
-        <table className="w-full text-sm">
-          <thead className="text-gray-400 sticky top-0 bg-gray-800">
-            <tr>
+    <div className="bg-[#17171C] text-white rounded-2xl p-4 ">
+      <h2 className="text-xl font-semibold mb-3">실시간 차트</h2>
+      
+      <div className="h-[70vh] overflow-y-auto pr-2 border-b border-gray-800 custom-scroll">
+        <table className="w-full text-sm md:text-base">
+          <thead className="sticky top-0 bg-[#17171C] z-10 border-b border-gray-700">
+            <tr className="text-gray-400">
               <th className="py-2 px-3 text-left">종목</th>
-              <th className="py-2 px-3 text-right">현재가</th>
-              <th className="py-2 px-3 text-right">등락률</th>
-              <th className="py-2 px-3 text-right">거래대금(24h)</th>
+              <th
+                className="py-2 px-3 text-right cursor-pointer select-none"
+                onClick={() => handleSort("price")}
+              >
+                현재가 {sortConfig.key === "price" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-2 px-3 text-right cursor-pointer select-none"
+                onClick={() => handleSort("change")}
+              >
+                등락률{" "}
+                {sortConfig.key === "change" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
             </tr>
           </thead>
+
           <tbody>
-            {rows.map(({ coin, p }) => {
-              const price = p.trade_price ?? 0;
-              const changeRate = (p.signed_change_rate ?? 0) * 100;
-              const vol = p.acc_trade_price_24h ?? 0;
+            {sortedCoins.map((coin) => {
+              const price = prices[coin.market]?.price ?? 0;
+              const change = (prices[coin.market]?.change ?? 0) * 100;
+              const isUp = change > 0;
+
               return (
                 <tr
                   key={coin.market}
-                  className="hover:bg-gray-700 cursor-pointer"
-                  onClick={() => onSelect?.(coin.market)}
+                  className="hover:bg-gray-800 transition cursor-pointer"
+                  onClick={() => onSelect(coin.market)}
                 >
-                  <td className="py-2 px-3">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{coin.korean_name}</span>
-                      <span className="text-xs text-gray-400">
-                        {coin.market}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-2 px-3 text-right">
-                    {Number(price).toLocaleString()} 원
-                  </td>
-                  <td
-                    className={`py-2 px-3 text-right ${
-                      changeRate > 0 ? "text-red-400" : "text-blue-400"
-                    }`}
-                  >
-                    {changeRate.toFixed(2)}%
-                  </td>
-                  <td className="py-2 px-3 text-right">
-                    {Math.round(vol).toLocaleString()} 원
+                  <td className="py-2 px-3">{coin.korean_name}</td>
+                  <td className="py-2 px-3 text-right">{price.toLocaleString()}</td>
+                  <td className={`py-2 px-3 text-right ${isUp ? "text-red-400" : "text-blue-400"}`}>
+                    {change.toFixed(2)}%
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
+      </div>      
     </div>
   );
 }

@@ -16,12 +16,11 @@ function DashboardPage() {
     const fetchCoins = async () => {
       try {
         const { data } = await api.get("/coins");
-        const krwCoins = data.coins.filter((coin) => coin.market.startsWith("KRW-"));
-        setCoins(krwCoins);
+        setCoins(data.coins);
       } catch (err) {
         console.error("❌ 코인 목록 불러오기 실패:", err);
       }
-    };
+    }
     fetchCoins();
   }, []);
 
@@ -31,23 +30,14 @@ function DashboardPage() {
 
     const loadPrices = async () => {
       try {
-        const map = {};
-            for (const c of coins.slice(0, 30)) { // 우선 상위 30개만
-                try {
-                    const { data } = await api.get(`/price/${c.market}`);
-                    map[c.market] = {
-                        trade_price: data.price,
-                        signed_change_rate: data.change,
-                    };
-                } catch (err) {
-                console.warn(`❌ ${c.market} 시세 실패`);
-                }
-            }
-        setPrices(map);
+        const { data } = await api.get("/prices");
+
+        const allPrices = data.prices;
+        setPrices(allPrices);
       } catch (e) {
         console.error("❌ 시세 불러오기 실패:", e);
       }
-    };
+    }
 
     loadPrices();
     const timer = setInterval(loadPrices, 5000);
@@ -60,24 +50,27 @@ function DashboardPage() {
   };
 
   return (
-    <div className="p-6 grid grid-cols-12 gap-6 bg-gray-900 text-white min-h-screen">
-      {/* 중앙: 시세 테이블 */}
-      <div className="col-span-12 lg:col-span-8">
-        <MainTable coins={coins} prices={prices} onSelect={openChartFor} />
-        <VolumeGrid coins={coins} prices={prices} onSelect={openChartFor} />
-      </div>
+    <div className="min-h-screen bg-[#17171C] text-white flex justify-center">
+      <div className="w-full max-w-7xl p-6 grid grid-cols-12 gap-6">
+        
+        {/* 중앙: 시세 테이블 */}
+        <div className="col-span-12 lg:col-span-8 text-sm space-y-8">
+          <MainTable coins={coins} prices={prices} onSelect={openChartFor} />
+          <VolumeGrid coins={coins} prices={prices} onSelect={openChartFor} />
+        </div>
 
-      {/* 우측: 변동률 TOP/BOTTOM 10 */}
-      <div className="col-span-12 lg:col-span-4">
-        <SideMovers coins={coins} prices={prices} />
-      </div>
+        {/* 우측: 변동률 TOP/BOTTOM 10 */}
+        <div className="col-span-12 lg:col-span-4 text-sm">
+          <SideMovers coins={coins} prices={prices} onSelect={openChartFor}/>
+        </div>
 
-      {/* 차트 모달 */}
-      <ChartModal
-        market={selectedMarket}
-        open={openChart}
-        onClose={() => setOpenChart(false)}
-      />
+        {/* 차트 모달 */}
+        <ChartModal
+          market={selectedMarket}
+          open={openChart}
+          onClose={() => setOpenChart(false)}
+        />
+      </div>
     </div>
   );
 }
