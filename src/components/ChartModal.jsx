@@ -12,35 +12,36 @@ import {
 function ChartModal({ market, open, onClose }) {
   const [chartData, setChartData] = useState([]);
   const [current, setCurrent] = useState(null);
-  const [quantity, setQuantity] = useState(1); // ✅ 수량 상태 추가
+  const [quantity, setQuantity] = useState(1);
 
-  // ✅ 24시간 캔들 데이터 가져오기
   useEffect(() => {
     if (!open || !market) return;
 
     const fetchChart = async () => {
       try {
-        const { data } = await api.get(
-          `https://api.upbit.com/v1/candles/minutes/60?market=${market}&count=24`
-        );
-        console.log("📊 업비트 응답 데이터:", data);
-        if (!Array.isArray(data) || data.length === 0) {
-          console.warn("⚠️ 차트 데이터 없음:", data);
+        const { data } = await api.get(`/candles/${market}`);
+
+        const candles = data.candles
+
+        if (!Array.isArray(candles) || candles.length === 0) {
+          console.warn("차트 데이터 없음:", candles);
           setChartData([]);
           return;
         }
 
-        // ✅ 차트 표시용 데이터 변환
-        const formatted = [...data].reverse().map((d) => ({
-          time: new Date(d.timestamp).toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          price: d.trade_price,
-        }));
+        // ✅ 시간 포맷을 보기 좋게 변환 (한국 시간)
+        const formatted = candles
+          .map((d) => ({
+            time: new Date(d.time).toLocaleTimeString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            price: d.price,
+          }))
+          .reverse(); // 오래된 -> 최신 순으로 정렬
 
         setChartData(formatted);
-        setCurrent(data[0]);
+        setCurrent(formatted[formatted.length - 1]); // 최신 데이터(가장 최근 시세)
       } catch (e) {
         console.error("❌ 차트 데이터 로드 실패:", e);
         setChartData([]);
@@ -52,20 +53,39 @@ function ChartModal({ market, open, onClose }) {
 
   if (!open) return null;
 
-  const price = current?.trade_price ?? 0;
-  const rate = ((current?.signed_change_rate ?? 0) * 100).toFixed(2);
-  const total = price * quantity; // ✅ 총 거래 금액 계산
+  const price = current?.price ?? 0;
+  const total = price * quantity;
 
-  const handleBuy = () => {
-    alert(
-      `✅ ${market} 매수 주문\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
-    );
+  const handleBuy = async () => {
+    try {
+      await api.post("/trades", {
+        type: "buy",
+        coinName: market,
+        price: current.price,
+        quantity,
+      });
+      alert(
+        `✅ ${market} 매수 주문\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
+      );
+    } catch (error) {
+      console.error("❌매수 요청 실패:", error);
+    }
   };
 
-  const handleSell = () => {
+  const handleSell = async () => {
+    try {
+      await api.post("/trades", {
+        type: "sell",
+        coinName: market,
+        price: current.price,
+        quantity,
+      });
     alert(
       `✅ ${market} 매도 주문\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
     );
+    } catch (error) {
+      console.error("❌매도 요청 실패:", error);
+    }
   };
 
   return (
@@ -82,7 +102,7 @@ function ChartModal({ market, open, onClose }) {
           </button>
         </div>
 
-        {/* 현재가 및 등락률 */}
+        {/* 현재가 */}
         <div className="flex gap-6 mb-4">
           <div>
             <div className="text-gray-400 text-sm">현재가</div>
@@ -90,19 +110,9 @@ function ChartModal({ market, open, onClose }) {
               {price.toLocaleString()} 원
             </div>
           </div>
-          <div>
-            <div className="text-gray-400 text-sm">등락률</div>
-            <div
-              className={`text-lg font-semibold ${
-                rate > 0 ? "text-red-400" : "text-blue-400"
-              }`}
-            >
-              {rate}%
-            </div>
-          </div>
         </div>
 
-        {/* ✅ 24시간 가격 차트 */}
+        {/* ✅ 차트 */}
         <div className="bg-gray-800 rounded-xl h-64 mb-5 p-3">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -132,21 +142,30 @@ function ChartModal({ market, open, onClose }) {
           )}
         </div>
 
-        {/* ✅ 수량 입력 */}
+        {/* 수량 입력 */}
         <div className="flex justify-center mb-3">
           <input
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            className="w-24 text-center bg-gray-800 border border-gray-600 rounded p-2"
-          />
-          <span className="ml-2 mt-2 text-gray-400 text-sm">개</span>
+              type="number"
+              min="0"
+              step="0.0001"
+              value={quantity}
+              onChange={(e) => {
+                const val = e.target.value;
+                // 빈값 입력 시 NaN 방지
+                setQuantity(val === "" ? "" : Number(val));
+              }}
+              className="w-32 text-center bg-gray-800 border border-gray-600 rounded p-2 text-white"
+            />
+            <span className="ml-2 mt-2 text-gray-400 text-sm">개</span>
         </div>
 
-        {/* ✅ 총 금액 표시 */}
+        {/* 총 금액 */}
         <div className="text-center text-gray-300 text-sm mb-5">
-          총 금액: <span className="text-yellow-400 font-semibold">{total.toLocaleString()}</span> 원
+          총 금액:{" "}
+          <span className="text-yellow-400 font-semibold">
+            {total.toLocaleString()}
+          </span>{" "}
+          원
         </div>
 
         {/* 매수/매도 버튼 */}

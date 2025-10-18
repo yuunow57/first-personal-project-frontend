@@ -4,6 +4,7 @@ import MainTable from "../components/MainTable";
 import SideMovers from "../components/SideMovers";
 import VolumeGrid from "../components/VolumeGrid";
 import ChartModal from "../components/ChartModal";
+import NavBar from "../components/NavBar";
 
 function DashboardPage() {
   const [coins, setCoins] = useState([]);
@@ -50,26 +51,32 @@ function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#17171C] text-white flex justify-center">
-      <div className="w-full max-w-7xl p-6 grid grid-cols-12 gap-6">
-        
-        {/* 중앙: 시세 테이블 */}
-        <div className="col-span-12 lg:col-span-8 text-sm space-y-8">
-          <MainTable coins={coins} prices={prices} onSelect={openChartFor} />
-          <VolumeGrid coins={coins} prices={prices} onSelect={openChartFor} />
-        </div>
+    <div className="min-h-screen bg-[#17171C] text-white pt-20">
+    {/* ✅ NavBar는 항상 최상단 고정 */}
+      <NavBar />
 
-        {/* 우측: 변동률 TOP/BOTTOM 10 */}
-        <div className="col-span-12 lg:col-span-4 text-sm">
-          <SideMovers coins={coins} prices={prices} onSelect={openChartFor}/>
-        </div>
+      {/* ✅ 나머지 내용은 NavBar 아래에서 중앙 정렬 */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-7xl p-6 grid grid-cols-12 gap-6">
+          
+          {/* 중앙: 시세 테이블 */}
+          <div className="col-span-12 lg:col-span-8 text-sm space-y-8 border-r border-gray-800 pr-6">
+            <MainTable coins={coins} prices={prices} onSelect={openChartFor} />
+            <VolumeGrid coins={coins} prices={prices} onSelect={openChartFor} />
+          </div>
 
-        {/* 차트 모달 */}
-        <ChartModal
-          market={selectedMarket}
-          open={openChart}
-          onClose={() => setOpenChart(false)}
-        />
+          {/* 우측: 변동률 TOP/BOTTOM 10 */}
+          <div className="col-span-12 lg:col-span-4 text-sm">
+            <SideMovers coins={coins} prices={prices} onSelect={openChartFor}/>
+          </div>
+
+          {/* 차트 모달 */}
+          <ChartModal
+            market={selectedMarket}
+            open={openChart}
+            onClose={() => setOpenChart(false)}
+          />
+        </div>
       </div>
     </div>
   );
