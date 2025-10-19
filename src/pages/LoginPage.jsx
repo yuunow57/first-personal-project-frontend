@@ -11,10 +11,15 @@ function LoginPage(){
         try{
             const res = await api.post("/auth/login", { email, password });
 
+            // 토큰 & 만료시간 저장
             localStorage.setItem("token", res.data.token);
-            setMessage("✅ 로그인 성공!");
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+            const expTime = Date.now() + 60 * 60 * 1000; // 1시간 후 만료
+            localStorage.setItem("tokenExp", expTime);
 
-            window.location.href = "/dashboard"; // 새로고침을 해야하기 때문에 navigate 사용 X
+            setMessage("✅ 로그인 성공!");
+            window.location.href = "/";
+
         } catch (error) {
             setMessage(error.response?.data?.message || "❌ 로그인 실패");
         }

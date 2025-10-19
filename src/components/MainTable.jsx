@@ -38,9 +38,9 @@ function MainTable({ coins, prices, onSelect }) {
   }, [coins, prices, sortConfig]);
 
   return (
-    <div className="bg-[#17171C] text-white rounded-2xl p-4 ">
+    <div className="bg-[#17171C] text-white rounded-2xl p-4">
       <h2 className="text-xl font-semibold mb-3">실시간 차트</h2>
-      
+
       <div className="h-[70vh] overflow-y-auto pr-2 border-b border-gray-800 custom-scroll">
         <table className="w-full text-sm md:text-base">
           <thead className="sticky top-0 bg-[#17171C] z-10 border-b border-gray-700">
@@ -50,14 +50,17 @@ function MainTable({ coins, prices, onSelect }) {
                 className="py-2 px-3 text-right cursor-pointer select-none"
                 onClick={() => handleSort("price")}
               >
-                현재가 {sortConfig.key === "price" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+                현재가{" "}
+                {sortConfig.key === "price" &&
+                  (sortConfig.direction === "asc" ? "▲" : "▼")}
               </th>
               <th
                 className="py-2 px-3 text-right cursor-pointer select-none"
                 onClick={() => handleSort("change")}
               >
                 등락률{" "}
-                {sortConfig.key === "change" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+                {sortConfig.key === "change" &&
+                  (sortConfig.direction === "asc" ? "▲" : "▼")}
               </th>
             </tr>
           </thead>
@@ -68,15 +71,33 @@ function MainTable({ coins, prices, onSelect }) {
               const change = (prices[coin.market]?.change ?? 0) * 100;
               const isUp = change > 0;
 
+              // ✅ 코인 심볼 추출 (KRW-BTC → BTC)
+              const symbol = coin.market.split("-")[1];
+              // ✅ Upbit CDN 로고 URL
+              const logoUrl = `https://static.upbit.com/logos/${symbol}.png`;
+
               return (
                 <tr
                   key={coin.market}
                   className="hover:bg-gray-800 transition cursor-pointer"
                   onClick={() => onSelect(coin.market)}
                 >
-                  <td className="py-2 px-3">{coin.korean_name}</td>
+                  <td className="py-2 px-3 flex items-center gap-2">
+                    {/* ✅ 로고 추가 */}
+                    <img
+                      src={logoUrl}
+                      alt={symbol}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => (e.target.style.display = "none")} // 로고 없으면 숨김
+                    />
+                    <span>{coin.korean_name}</span>
+                  </td>
                   <td className="py-2 px-3 text-right">{price.toLocaleString()}</td>
-                  <td className={`py-2 px-3 text-right ${isUp ? "text-red-400" : "text-blue-400"}`}>
+                  <td
+                    className={`py-2 px-3 text-right ${
+                      isUp ? "text-red-400" : "text-blue-400"
+                    }`}
+                  >
                     {change.toFixed(2)}%
                   </td>
                 </tr>
@@ -84,7 +105,7 @@ function MainTable({ coins, prices, onSelect }) {
             })}
           </tbody>
         </table>
-      </div>      
+      </div>
     </div>
   );
 }

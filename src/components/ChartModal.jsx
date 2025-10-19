@@ -13,6 +13,8 @@ function ChartModal({ market, open, onClose }) {
   const [chartData, setChartData] = useState([]);
   const [current, setCurrent] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [owned, setOwned] = useState(0); // ✅ 보유 수량
+  const [balance, setBalance] = useState(0); // ✅ 보유 잔액
 
   useEffect(() => {
     if (!open || !market) return;
@@ -20,16 +22,13 @@ function ChartModal({ market, open, onClose }) {
     const fetchChart = async () => {
       try {
         const { data } = await api.get(`/candles/${market}`);
-
-        const candles = data.candles
+        const candles = data.candles;
 
         if (!Array.isArray(candles) || candles.length === 0) {
-          console.warn("차트 데이터 없음:", candles);
           setChartData([]);
           return;
         }
 
-        // ✅ 시간 포맷을 보기 좋게 변환 (한국 시간)
         const formatted = candles
           .map((d) => ({
             time: new Date(d.time).toLocaleTimeString("ko-KR", {
@@ -38,17 +37,29 @@ function ChartModal({ market, open, onClose }) {
             }),
             price: d.price,
           }))
-          .reverse(); // 오래된 -> 최신 순으로 정렬
+          .reverse();
 
         setChartData(formatted);
-        setCurrent(formatted[formatted.length - 1]); // 최신 데이터(가장 최근 시세)
+        setCurrent(formatted[formatted.length - 1]);
       } catch (e) {
         console.error("❌ 차트 데이터 로드 실패:", e);
         setChartData([]);
       }
     };
 
+    const fetchUserData = async () => {
+      try {
+        const { data } = await api.get("/me");
+        setBalance(data.balance);
+        const coin = data.coins?.find((c) => c.market === market);
+        setOwned(coin ? coin.quantity : 0);
+      } catch (e) {
+        console.error("❌ 사용자 자산 로드 실패:", e);
+      }
+    };
+
     fetchChart();
+    fetchUserData();
   }, [open, market]);
 
   if (!open) return null;
@@ -56,6 +67,7 @@ function ChartModal({ market, open, onClose }) {
   const price = current?.price ?? 0;
   const total = price * quantity;
 
+  // ✅ 매수
   const handleBuy = async () => {
     try {
       await api.post("/trades", {
@@ -65,13 +77,18 @@ function ChartModal({ market, open, onClose }) {
         quantity,
       });
       alert(
-        `✅ ${market} 매수 주문\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
+        `✅ ${market} 매수 완료\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
       );
+      onClose();
     } catch (error) {
-      console.error("❌매수 요청 실패:", error);
+      const msg =
+        error.response?.data?.message || "❌ 매수 중 오류가 발생했습니다.";
+      alert(msg);
+      console.error("❌ 매수 요청 실패:", error);
     }
   };
 
+  // ✅ 매도
   const handleSell = async () => {
     try {
       await api.post("/trades", {
@@ -80,11 +97,15 @@ function ChartModal({ market, open, onClose }) {
         price: current.price,
         quantity,
       });
-    alert(
-      `✅ ${market} 매도 주문\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
-    );
+      alert(
+        `✅ ${market} 매도 완료\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
+      );
+      onClose();
     } catch (error) {
-      console.error("❌매도 요청 실패:", error);
+      const msg =
+        error.response?.data?.message || "❌ 매도 중 오류가 발생했습니다.";
+      alert(msg);
+      console.error("❌ 매도 요청 실패:", error);
     }
   };
 
@@ -118,10 +139,7 @@ function ChartModal({ market, open, onClose }) {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis dataKey="time" tick={{ fill: "#aaa", fontSize: 10 }} />
-                <YAxis
-                  domain={["auto", "auto"]}
-                  tick={{ fill: "#aaa", fontSize: 10 }}
-                />
+                <YAxis domain={["auto", "auto"]} tick={{ fill: "#aaa", fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{ background: "#333", border: "none" }}
                   labelStyle={{ color: "#ccc" }}
@@ -142,46 +160,42 @@ function ChartModal({ market, open, onClose }) {
           )}
         </div>
 
-        {/* 수량 입력 */}
-        <div className="flex justify-center mb-3">
-          <input
+        {/* 하단 정보 & 입력 */}
+        <div className="flex justify-between items-center">
+          {/* 왼쪽: 사용자 자산 정보 */}
+          <div className="text-sm text-gray-300 leading-relaxed">
+            <p>보유 수량: <span className="text-green-400 font-medium">{owned}</span> 개</p>
+            <p>보유 평가액: <span className="text-yellow-400 font-medium">{(owned * price).toLocaleString()}</span> 원</p>
+            <p>매수 가능 잔액: <span className="text-blue-400 font-medium">{balance.toLocaleString()}</span> 원</p>
+          </div>
+
+          {/* 오른쪽: 수량 입력 + 버튼 */}
+          <div className="flex items-center gap-4">
+            <input
               type="number"
               min="0"
               step="0.0001"
               value={quantity}
-              onChange={(e) => {
-                const val = e.target.value;
-                // 빈값 입력 시 NaN 방지
-                setQuantity(val === "" ? "" : Number(val));
-              }}
+              onChange={(e) =>
+                setQuantity(e.target.value === "" ? "" : Number(e.target.value))
+              }
               className="w-32 text-center bg-gray-800 border border-gray-600 rounded p-2 text-white"
             />
-            <span className="ml-2 mt-2 text-gray-400 text-sm">개</span>
-        </div>
+            <span className="text-gray-400 text-sm">개</span>
 
-        {/* 총 금액 */}
-        <div className="text-center text-gray-300 text-sm mb-5">
-          총 금액:{" "}
-          <span className="text-yellow-400 font-semibold">
-            {total.toLocaleString()}
-          </span>{" "}
-          원
-        </div>
-
-        {/* 매수/매도 버튼 */}
-        <div className="flex justify-center gap-6">
-          <button
-            onClick={handleBuy}
-            className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-medium"
-          >
-            매수
-          </button>
-          <button
-            onClick={handleSell}
-            className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium"
-          >
-            매도
-          </button>
+            <button
+              onClick={handleBuy}
+              className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-medium"
+            >
+              매수
+            </button>
+            <button
+              onClick={handleSell}
+              className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium"
+            >
+              매도
+            </button>
+          </div>
         </div>
       </div>
     </div>
