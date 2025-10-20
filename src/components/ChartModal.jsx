@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { btnStyles } from "../styles/buttonStyle";
 import {
   LineChart,
   Line,
@@ -15,6 +16,11 @@ function ChartModal({ market, open, onClose }) {
   const [quantity, setQuantity] = useState(1);
   const [owned, setOwned] = useState(0); // ✅ 보유 수량
   const [balance, setBalance] = useState(0); // ✅ 보유 잔액
+
+  // ✅ 모달 열릴 때마다 수량 1로 리셋
+  useEffect(() => {
+    if (open) setQuantity(1);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !market) return;
@@ -179,19 +185,19 @@ function ChartModal({ market, open, onClose }) {
               onChange={(e) =>
                 setQuantity(e.target.value === "" ? "" : Number(e.target.value))
               }
-              className="w-32 text-center bg-gray-800 border border-gray-600 rounded p-2 text-white"
+              className="w-32 text-center bg-gray-800 border border-gray-600 rounded p-2 text-white appearance-none"
             />
             <span className="text-gray-400 text-sm">개</span>
 
             <button
               onClick={handleBuy}
-              className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-medium"
+              className={btnStyles.buy}
             >
               매수
             </button>
             <button
               onClick={handleSell}
-              className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-medium"
+              className={btnStyles.sell}
             >
               매도
             </button>

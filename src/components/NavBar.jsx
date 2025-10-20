@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { btnStyles } from "../styles/buttonStyle";
 
 function NavBar() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function NavBar() {
     localStorage.removeItem("user");
     setUser(null);
     setToken(null);
-    navigate("/");
+    window.location.href = "/";
   };
 
   return (
@@ -57,7 +58,7 @@ function NavBar() {
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm transition"
+                className={btnStyles.logout}
               >
                 로그아웃
               </button>
@@ -66,13 +67,13 @@ function NavBar() {
             <>
               <button
                 onClick={() => navigate("/login")}
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm transition"
+                className={btnStyles.login}
               >
                 로그인
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition"
+                className={btnStyles.register}
               >
                 회원가입
               </button>

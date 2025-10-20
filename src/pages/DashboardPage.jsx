@@ -4,8 +4,9 @@ import MainTable from "../components/MainTable";
 import SideMovers from "../components/SideMovers";
 import VolumeGrid from "../components/VolumeGrid";
 import ChartModal from "../components/ChartModal";
+import MyHoldingsPanel from "../components/MyHoldingsPanel";
 import NavBar from "../components/NavBar";
-import Footer from "../components/Footer"; // ✅ 추가
+import Footer from "../components/Footer";
 
 function DashboardPage() {
   const [coins, setCoins] = useState([]);
@@ -66,7 +67,8 @@ function DashboardPage() {
           </div>
 
           {/* 우측: 변동률 TOP/BOTTOM */}
-          <div className="col-span-12 lg:col-span-4 text-sm">
+          <div className="col-span-12 lg:col-span-4 text-sm space-y-0">
+            <MyHoldingsPanel onSelect={openChartFor} />
             <SideMovers coins={coins} prices={prices} onSelect={openChartFor} />
           </div>
 
