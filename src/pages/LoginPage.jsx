@@ -67,7 +67,7 @@ function LoginPage() {
         <p className="text-center text-sm text-gray-400 mt-6">
           계정이 없으신가요?{" "}
           <a
-            href="/register"
+            href="/auth/register"
             className="text-emerald-400 hover:underline hover:text-emerald-300"
           >
             회원가입
