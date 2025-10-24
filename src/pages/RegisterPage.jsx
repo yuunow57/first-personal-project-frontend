@@ -65,7 +65,7 @@ function RegisterPage() {
         <p className="text-center text-sm text-gray-400 mt-6">
           이미 계정이 있으신가요?{" "}
           <span
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/login")}
             className="text-indigo-400 hover:underline hover:text-indigo-300 cursor-pointer"
           >
             로그인

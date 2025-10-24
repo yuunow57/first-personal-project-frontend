@@ -86,6 +86,7 @@ function ChartModal({ market, open, onClose }) {
         `✅ ${market} 매수 완료\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
       );
       onClose();
+      window.location.href = "/";
     } catch (error) {
       const msg =
         error.response?.data?.message || "❌ 매수 중 오류가 발생했습니다.";
@@ -107,6 +108,7 @@ function ChartModal({ market, open, onClose }) {
         `✅ ${market} 매도 완료\n수량: ${quantity}개\n현재가: ${price.toLocaleString()}원\n총 금액: ${total.toLocaleString()}원`
       );
       onClose();
+      window.location.href = "/";
     } catch (error) {
       const msg =
         error.response?.data?.message || "❌ 매도 중 오류가 발생했습니다.";
