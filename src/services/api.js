@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:3000/api" // 백엔드 주소
+    // baseURL: "http://localhost:3000/api" // 로컬 백엔드 주소
+    baseURL: import.meta.env.VITE_API_BASE_URL + "/api" // 백엔드 주소
 });
 
 api.interceptors.request.use((config) => {
