@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 
 function MainTable({ coins, prices, onSelect }) {
-  const [sortConfig, setSortConfig] = useState({ key: "change", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({ key: "price", direction: "desc" });
 
   // 정렬 기준 변경 함수
   const handleSort = (key) => {
